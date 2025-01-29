@@ -1,6 +1,9 @@
 # product_scraper_with_redis
  Product Scrapper with Redis, Proxy and Retry mechanism
 
+# Loom Demo recording:
+https://www.loom.com/share/e6852c8e48f447faa973712add5ba5fb?sid=c1ace7d3-ca35-4fc3-96b8-5033cee0ca7e
+
 # Quick Setup for Running the App
 ## 1. Requirements
 ### System:
