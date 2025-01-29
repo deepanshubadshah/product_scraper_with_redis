@@ -1,4 +1,6 @@
 venv/
+images/
+products.json
 
 # OS-specific files
 .DS_Store

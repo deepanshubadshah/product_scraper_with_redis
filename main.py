@@ -10,9 +10,8 @@ from dotenv import load_dotenv
 app = FastAPI()
 
 load_dotenv()
-
 TOKEN = os.getenv("AUTH_TOKEN")
-print(TOKEN)
+REDIS_URL = os.getenv("REDIS_URL")
 
 def authenticate(auth_token: str = Header(...)):
     """
@@ -40,7 +39,7 @@ def scrape(limit: int = 5, proxy: str = None, auth: bool = Depends(authenticate)
 
     proxy = validate_proxy(proxy)
     storage = LocalStorage()
-    cache = Cache(redis_url="redis://localhost:6379/0")
+    cache = Cache(redis_url=REDIS_URL)
     scraper = Scraper(limit, proxy, storage, cache)
     scraper.scrape_catalogue()
     return {"message": f"Scraping completed for {limit} pages."}
