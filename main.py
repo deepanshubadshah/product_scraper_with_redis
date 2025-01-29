@@ -41,8 +41,12 @@ def scrape(limit: int = 5, proxy: str = None, auth: bool = Depends(authenticate)
     storage = LocalStorage()
     cache = Cache(redis_url=REDIS_URL)
     scraper = Scraper(limit, proxy, storage, cache)
-    scraper.scrape_catalogue()
-    return {"message": f"Scraping completed for {limit} pages."}
+    total_products, updated_products = scraper.scrape_catalogue()
+    return {
+        "message": f"Scraping completed for {limit} pages.",
+        "total_products_scraped": total_products,
+        "products_updated_in_db": updated_products
+    }
 
 
 @app.get("/health")

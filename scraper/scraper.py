@@ -22,12 +22,23 @@ class Scraper:
             proxies = None
             if self.proxy:
                 proxies = {"http": self.proxy, "https": self.proxy}
-            
-            response = requests.get(url, proxies=proxies, timeout=20)  # Add a timeout to avoid hanging
-            response.raise_for_status()
-            return response.text
+            try:
+                response = requests.get(url, proxies=proxies, timeout=20)  # Ensure headers are passed
+                response.raise_for_status()
+                return response.text
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 404:
+                    raise  # Properly handle 404
+                else:
+                    print(f"Retrying {url} due to HTTP error: {e}")
+                    return retry(requests, retries=3, delay=2)  
 
-        return retry(request, retries=3, delay=2)
+        try:
+            return request()
+        except Exception as e:
+            print(f"Failed to fetch {url}: {e}")
+            return ""
+
 
     def parse_products(self, html: str):
         """
@@ -73,21 +84,38 @@ class Scraper:
         """
         base_url = "https://dentalstall.com/shop/"
         total_products = 0
+        updated_products = 0
 
-        for page in range(1, self.limit + 1):
+        for page in range(119, self.limit + 1):
             url = f"{base_url}page/{page}/" if page > 1 else base_url
-            print(f"Scraping {url}...")
-            html = self.fetch_page(url)
+            try:
+                print(f"Scraping {url}...")
+                html = self.fetch_page(url)
+                if not html.strip():
+                    print(f"Skipping page {page} due to empty response.")
+                    break
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 404:
+                    print(f"Page {page} not found. Stopping pagination.")
+                    break
+                else:
+                    raise
+
             products = self.parse_products(html)
+            if not products:
+                print(f"No products found on page {page}. Stopping pagination.")
+                break
 
             for product in products:
                 cache_key = self.cache.generate_key(product.product_link)  # Use product_link as the unique key
                 cached_price = self.cache.get(cache_key)
 
-                if cached_price != str(product.product_price):  # Save only if the price changed
+                if cached_price != str(product.product_price):  # if the price changed
                     self.storage.save_products([product])
                     self.cache.set(cache_key, product.product_price)
+                    updated_products += 1
 
             total_products += len(products)
 
-        print(f"Scraping completed: {total_products} products scraped.")
+        print(f"Scraping completed: {total_products} products scraped, {updated_products} updated in DB.")
+        return total_products, updated_products
