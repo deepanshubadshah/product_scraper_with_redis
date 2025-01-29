@@ -86,7 +86,7 @@ class Scraper:
         total_products = 0
         updated_products = 0
 
-        for page in range(119, self.limit + 1):
+        for page in range(1, self.limit + 1):
             url = f"{base_url}page/{page}/" if page > 1 else base_url
             try:
                 print(f"Scraping {url}...")
